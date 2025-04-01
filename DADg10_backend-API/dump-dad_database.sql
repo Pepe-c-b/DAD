@@ -3,6 +3,8 @@
 -- Host: localhost    Database: dad_database
 -- ------------------------------------------------------
 -- Server version	8.0.28
+
+
 -- Elimina la tabla `Grupo` si ya existe y la vuelve a crear
 DROP TABLE IF EXISTS `Grupo`;
 CREATE TABLE Grupo (
