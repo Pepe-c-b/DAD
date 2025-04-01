@@ -1,6 +1,11 @@
 package es.us.dad.mysql.rest;
 
 import java.util.Calendar;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Random;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -25,27 +30,29 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.eventbus.Message;
-import io.vertx.core.http.HttpServer;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.BodyHandler;
 
 public class RestAPIVerticle extends AbstractVerticle {
-
-	private transient Gson gson;
+	
+	private Map<Integer, Group> groups = new HashMap<Integer, Group>();
+	private Gson gson;
 
 	@Override
 	public void start(Promise<Void> startFuture) {
 
+		createSomeData(25);
+		
 		// Instantiating a Gson serialize object using specific date format
-		gson = new GsonBuilder().setDateFormat("yyyy-MM-dd").create();
+		//gson = new GsonBuilder().setDateFormat("yyyy-MM-dd").create();
+		gson = new GsonBuilder().create();
 
 		// Defining the router object
 		Router router = Router.router(vertx);
 
 		// Handling any server startup result
-		HttpServer httpServer = vertx.createHttpServer();
-		httpServer.requestHandler(router::handle).listen(8080, result -> {
+		vertx.createHttpServer().requestHandler(router::handle).listen(8080, result -> {
 			if (result.succeeded()) {
 				System.out.println("API Rest is listening on port 8080");
 				startFuture.complete();
@@ -59,6 +66,10 @@ public class RestAPIVerticle extends AbstractVerticle {
 		router.route("/api*").handler(BodyHandler.create());
 
 		// Endpoint definition for CRUD ops
+		
+		//IdGroup
+		
+		router.get("/api/groups").handler(this::getAllWithParams);
 		router.get("/api/groups/:groupid").handler(this::getGroupById);
 		router.post("/api/groups").handler(this::addGroup);
 		router.delete("/api/groups/:groupid").handler(this::deleteGroup);
@@ -66,6 +77,7 @@ public class RestAPIVerticle extends AbstractVerticle {
 		router.get("/api/groups/:groupid/devices").handler(this::getDevicesFromGroup);
 		router.put("/api/groups/:groupid/devices/:deviceid").handler(this::addDeviceToGroup);
 
+		//IdDevice
 		router.get("/api/devices/:device").handler(this::getDeviceById);
 		router.post("/api/devices").handler(this::addDevice);
 		router.delete("/api/devices/:deviceid").handler(this::deleteDevice);
@@ -75,21 +87,25 @@ public class RestAPIVerticle extends AbstractVerticle {
 		router.get("/api/devices/:deviceid/sensors/:type").handler(this::getSensorsFromDeviceAndType);
 		router.get("/api/devices/:deviceid/actuators/:type").handler(this::getActuatorsFromDeviceAndType);
 
+		//IdSensor
 		router.get("/api/sensors/:sensor").handler(this::getSensorById);
 		router.post("/api/sensors").handler(this::addSensor);
 		router.delete("/api/sensors/:sensorid").handler(this::deleteSensor);
 		router.put("/api/sensors/:sensorid").handler(this::putSensor);
 
+		//IdFan
 		router.get("/api/actuators/:actuator").handler(this::getActuatorById);
 		router.post("/api/actuators").handler(this::addActuator);
 		router.delete("/api/actuators/:actuatorid").handler(this::deleteActuator);
 		router.put("/api/actuators/:actuatorid").handler(this::putActuator);
 
+		//Values sensor
 		router.post("/api/sensor_values").handler(this::addSensorValue);
 		router.delete("/api/sensor_values/:sensorvalueid").handler(this::deleteSensorValue);
 		router.get("/api/sensor_values/:sensorid/last").handler(this::getLastSensorValue);
 		router.get("/api/sensor_values/:sensorid/latest/:limit").handler(this::getLatestSensorValue);
 
+		//Values fan
 		router.post("/api/actuator_states").handler(this::addActuatorStatus);
 		router.delete("/api/actuator_states/:actuatorstatusid").handler(this::deleteActuatorStatus);
 		router.get("/api/actuator_states/:actuatorid/last").handler(this::getLastActuatorStatus);
@@ -108,12 +124,32 @@ public class RestAPIVerticle extends AbstractVerticle {
 	private DatabaseMessage deserializeDatabaseMessageFromMessageHandler(AsyncResult<Message<Object>> handler) {
 		return gson.fromJson(handler.result().body().toString(), DatabaseMessage.class);
 	}
+	
+	@SuppressWarnings("unused")
+	private void getAll(RoutingContext routingContext) {
+		routingContext.response().putHeader("content-type", "application/json; charset=utf-8").setStatusCode(200)
+				.end(gson.toJson(groups.values()));
+	}
 
 	/**
 	 * GET Group handler function for /api/groups/:groupid endpoint
 	 * 
 	 * @param routingContext
 	 */
+	private void getAllWithParams(RoutingContext routingContext) {
+		
+		final String status = routingContext.queryParams().contains("status") ? 
+				routingContext.queryParam("status").get(0) : null;
+		
+		routingContext.response().putHeader("content-type", "application/json; charset=utf-8").setStatusCode(200)
+				.end(gson.toJson(groups.values().stream().filter(elem -> {
+					boolean res = true;
+					
+					//res = res != null ? elem.getStatus().equals(status) : true;
+					return res;
+				}).collect(Collectors.toList())));
+	}
+	
 	private void getGroupById(RoutingContext routingContext) {
 		int groupId = Integer.parseInt(routingContext.request().getParam("groupid"));
 
@@ -858,5 +894,14 @@ public class RestAPIVerticle extends AbstractVerticle {
 	public void stop(Future<Void> stopFuture) throws Exception {
 		super.stop(stopFuture);
 	}
+	
+	private void createSomeData(int number) {
+    	Random rnd = new Random();
+        IntStream.range(0, number).forEach(elem -> {
+        	int id = rnd.nextInt(); 
+            //int status = rnd.nextInt(); 
+            groups.put(id, new Group(id, "Info_" + id));
+        });
+    }
 
 }
