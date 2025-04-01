@@ -39,10 +39,24 @@
 			<scope>test</scope>
 		</dependency>
 
+	<!--
+		
+***********************************************************************************************************************		
+*********** CAMBIADO POR PEPE PARA AJUSTARSE AL QUE PONE EN LA DIAPOSITIVA ********************************************
+***********************************************************************************************************************
+
 		<dependency>
 			<groupId>io.vertx</groupId>
 			<artifactId>vertx-mqtt</artifactId>
 			<version>3.8.5</version>
+		</dependency>
+		
+		-->	
+		
+		<dependency>
+			<groupId>io.vertx</groupId>
+			<artifactId>vertx-mqtt</artifactId>
+			<version>4.2.6</version>
 		</dependency>
 
 	</dependencies>
