@@ -1,31 +1,52 @@
 package es.us.dad.mysql.rest;
 
 /**
- * An enum that represents the entity associated with the message that the Rest
- * API exchanges with the controller. This entity differs from the one used
- * between the controller and the database to avoid conflicts between the
- * messages exchanged by both elements.
+ * Enumeración que representa las entidades asociadas con los mensajes que el API REST
+ * intercambia con el controlador. Estas entidades difieren de las usadas entre el
+ * controlador y la base de datos para evitar conflictos entre los mensajes intercambiados.
+ * 
+ * Cada valor enum tiene:
+ * - value: Nombre de la entidad para uso interno
+ * - address: Dirección del event bus para comunicación
  * 
  * @author luismi
- *
  */
 public enum RestEntityMessage {
-	Sensor("SensorRest"), Actuator("ActuatorRest"), Group("GroupRest"), Device("DeviceRest"),
-	SensorValue("SensorValueRest"), ActuatorStatus("ActuatorStatusRest");
+    Sensor("SensorRest"), 
+    Actuator("ActuatorRest"), 
+    Group("GroupRest"), 
+    Device("DeviceRest"),
+    SensorValue("SensorValueRest"), 
+    ActuatorStatus("ActuatorStatusRest");
 
-	private final String value;
-	private final String address;
+    // Nombre/valor de la entidad
+    private final String value;
+    
+    // Dirección para el event bus (se mantiene igual que value)
+    private final String address;
 
-	private RestEntityMessage(String value) {
-		this.value = value;
-		this.address = value;
-	}
+    /**
+     * Constructor privado para los valores enum
+     * @param value Nombre de la entidad y dirección del event bus
+     */
+    private RestEntityMessage(String value) {
+        this.value = value;
+        this.address = value; // Se mantiene igual que value
+    }
 
-	public String getRestEntityMessage() {
-		return value;
-	}
+    /**
+     * Obtiene el nombre de la entidad REST
+     * @return Nombre de la entidad
+     */
+    public String getRestEntityMessage() {
+        return value;
+    }
 
-	public String getAddress() {
-		return address;
-	}
+    /**
+     * Obtiene la dirección del event bus para esta entidad
+     * @return Dirección para comunicación vía event bus
+     */
+    public String getAddress() {
+        return address;
+    }
 }

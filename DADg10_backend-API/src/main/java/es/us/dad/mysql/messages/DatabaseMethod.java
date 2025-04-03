@@ -25,9 +25,10 @@ public enum DatabaseMethod {
 	CreateActuator, GetActuator, EditActuator, DeleteActuator,
 
 	// Sensor value operations
-	CreateSensorValue, DeleteSensorValue, GetLastSensorValueFromSensorId, GetLatestSensorValuesFromSensorId,
+	CreateSensorValue, DeleteSensorValue, GetLastSensorValueFromSensorId, GetLatestSensorValuesFromSensorId, 
+	GetLastSensorValuesFromGroupId,
 
 	// Actuator status operations
 	CreateActuatorStatus, DeleteActuatorStatus, GetLastActuatorStatusFromActuatorId,
-	GetLatestActuatorStatesFromActuatorId,
+	GetLatestActuatorStatesFromActuatorId,GetLastActuatorStatesFromGroupId,
 }
