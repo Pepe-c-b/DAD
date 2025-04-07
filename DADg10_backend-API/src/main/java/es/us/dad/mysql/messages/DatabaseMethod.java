@@ -30,5 +30,5 @@ public enum DatabaseMethod {
 
 	// Actuator status operations
 	CreateActuatorStatus, DeleteActuatorStatus, GetLastActuatorStatusFromActuatorId,
-	GetLatestActuatorStatesFromActuatorId,GetLastActuatorStatesFromGroupId,
+	GetLatestActuatorStatesFromActuatorId,GetLastActuatorStatesFromGroupId, Create, Get, Edit, Delete, GetPlacasFromGrupo, GetSensoresAireFromPlaca, GetVentiladoresFromPlaca, GetLastValueFromSensor, GetLastStatusFromVentilador,
 }

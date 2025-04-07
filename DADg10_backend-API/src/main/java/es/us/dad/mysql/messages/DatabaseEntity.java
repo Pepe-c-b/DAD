@@ -10,8 +10,7 @@ package es.us.dad.mysql.messages;
  *
  */
 public enum DatabaseEntity {
-	Sensor("Sensor"), Actuator("Actuator"), Group("Group"), Device("Device"), SensorValue("SensorValue"),
-	ActuatorStatus("ActuatorStatus");
+	SensorAire("SensorAire"), Ventilador("Ventilador"), Grupo("Groupo"), Placa("Ventilador");
 
 	/**
 	 * Textual value associated with the value listed
