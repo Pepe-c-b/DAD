@@ -1,5 +1,6 @@
 package es.us.dad.mysql.messages;
 
+
 import es.us.dad.mysql.entities.SensorType;
 
 public class DatabaseMessageIdAndSensorType {
@@ -11,10 +12,10 @@ public class DatabaseMessageIdAndSensorType {
 		super();
 	}
 
-	public DatabaseMessageIdAndSensorType(int id, SensorType sensorType) {
+	public DatabaseMessageIdAndSensorType(int id, SensorType type) {
 		super();
 		this.id = id;
-		this.sensorType = sensorType;
+		this.sensorType = type;
 	}
 
 	public int getId() {

@@ -34,7 +34,7 @@ public class MySQLVerticleAUX extends AbstractVerticle {
     public void start(Promise<Void> startFuture) {
         // Configuración de conexión a MySQL
         MySQLConnectOptions connectOptions = new MySQLConnectOptions()
-                .setPort(3306)
+                .setPort(8080)
                 .setHost("localhost")
                 .setDatabase("dad")
                 .setUser("root")

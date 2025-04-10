@@ -32,7 +32,7 @@ public class ActuatorsController extends AbstractController {
 	 * the controllers is defined.
 	 */
 	public ActuatorsController() {
-		super(DatabaseEntity.Actuator);
+		super(DatabaseEntity.Ventilador);
 	}
 
 	/**

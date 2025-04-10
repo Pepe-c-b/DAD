@@ -1,24 +1,17 @@
 package es.us.dad.mysql.rest;
 
 import java.util.Calendar;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Random;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-import es.us.dad.mysql.entities.Actuator;
-import es.us.dad.mysql.entities.ActuatorStatus;
+import es.us.dad.mysql.entities.Ventilador;
+import es.us.dad.mysql.entities.Placa;
 import es.us.dad.mysql.entities.ActuatorType;
-import es.us.dad.mysql.entities.Device;
-import es.us.dad.mysql.entities.Group;
-import es.us.dad.mysql.entities.Sensor;
+import es.us.dad.mysql.entities.Grupo;
+import es.us.dad.mysql.entities.SensorAire;
 import es.us.dad.mysql.entities.SensorType;
-import es.us.dad.mysql.entities.SensorValue;
 import es.us.dad.mysql.messages.DatabaseEntity;
 import es.us.dad.mysql.messages.DatabaseMessage;
 import es.us.dad.mysql.messages.DatabaseMessageIdAndActuatorType;
@@ -44,7 +37,7 @@ public class RestAPIVerticle extends AbstractVerticle {
     private static final String CHARSET_UTF8 = "charset=utf-8";
     
     // Mapa para almacenar grupos en memoria
-    //private Map<Integer, Group> groups = new HashMap<Integer, Group>();
+    //private Map<Integer, Grupo> groups = new HashMap<Integer, Grupo>();
     
     // Objeto Gson para serialización/deserialización JSON
     private Gson gson;
@@ -296,9 +289,9 @@ public class RestAPIVerticle extends AbstractVerticle {
      * Obtiene todos los grupos
      */
     private void getAllGroups(RoutingContext ctx) {
-        DatabaseMessage message = new DatabaseMessage(DatabaseMessageType.SELECT, DatabaseEntity.Group, 
+        DatabaseMessage message = new DatabaseMessage(DatabaseMessageType.SELECT, DatabaseEntity.Grupo, 
                                                     DatabaseMethod.GetGroup, "");
-        sendDatabaseMessageForList(ctx, message, RestEntityMessage.Group.getAddress(), Group[].class, 200);
+        sendDatabaseMessageForList(ctx, message, RestEntityMessage.Group.getAddress(), Grupo[].class, 200);
     }
 
     /**
@@ -307,9 +300,9 @@ public class RestAPIVerticle extends AbstractVerticle {
     private void getGroupById(RoutingContext ctx) {
         try {
             int groupId = Integer.parseInt(ctx.request().getParam("groupid"));
-            DatabaseMessage message = new DatabaseMessage(DatabaseMessageType.SELECT, DatabaseEntity.Group,
+            DatabaseMessage message = new DatabaseMessage(DatabaseMessageType.SELECT, DatabaseEntity.Grupo,
                     DatabaseMethod.GetGroup, groupId);
-            sendDatabaseMessage(ctx, message, RestEntityMessage.Group.getAddress(), Group.class, 200);
+            sendDatabaseMessage(ctx, message, RestEntityMessage.Group.getAddress(), Grupo.class, 200);
         } catch (NumberFormatException e) {
             ctx.fail(400, e);
         }
@@ -320,14 +313,14 @@ public class RestAPIVerticle extends AbstractVerticle {
      */
     private void addGroup(RoutingContext ctx) {
         try {
-            Group group = gson.fromJson(ctx.getBodyAsString(), Group.class);
-            if (group == null || group.getMqttChannel() == null) {
+        	Grupo group = gson.fromJson(ctx.getBodyAsString(), Grupo.class);
+            if (group == null || group.getMqttGrupoch() == null) {
                 ctx.fail(400, new IllegalArgumentException("Datos de grupo inválidos"));
                 return;
             }
-            DatabaseMessage message = new DatabaseMessage(DatabaseMessageType.INSERT, DatabaseEntity.Group,
+            DatabaseMessage message = new DatabaseMessage(DatabaseMessageType.INSERT, DatabaseEntity.Grupo,
                     DatabaseMethod.CreateGroup, group);
-            sendDatabaseMessage(ctx, message, RestEntityMessage.Group.getAddress(), Group.class, 201);
+            sendDatabaseMessage(ctx, message, RestEntityMessage.Group.getAddress(), Grupo.class, 201);
         } catch (Exception e) {
             ctx.fail(400, e);
         }
@@ -339,9 +332,9 @@ public class RestAPIVerticle extends AbstractVerticle {
     private void deleteGroup(RoutingContext ctx) {
         try {
             int groupId = Integer.parseInt(ctx.request().getParam("groupid"));
-            DatabaseMessage message = new DatabaseMessage(DatabaseMessageType.DELETE, DatabaseEntity.Group,
+            DatabaseMessage message = new DatabaseMessage(DatabaseMessageType.DELETE, DatabaseEntity.Grupo,
                     DatabaseMethod.DeleteGroup, groupId);
-            sendDatabaseMessage(ctx, message, RestEntityMessage.Group.getAddress(), Group.class, 200);
+            sendDatabaseMessage(ctx, message, RestEntityMessage.Group.getAddress(), Grupo.class, 200);
         } catch (NumberFormatException e) {
             ctx.fail(400, e);
         }
@@ -353,15 +346,15 @@ public class RestAPIVerticle extends AbstractVerticle {
     private void putGroup(RoutingContext ctx) {
         try {
             int groupId = Integer.parseInt(ctx.request().getParam("groupid"));
-            Group group = gson.fromJson(ctx.getBodyAsString(), Group.class);
+            Grupo group = gson.fromJson(ctx.getBodyAsString(), Grupo.class);
             if (group == null) {
                 ctx.fail(400, new IllegalArgumentException("Datos de grupo inválidos"));
                 return;
             }
-            group.setIdGroup(groupId);
-            DatabaseMessage message = new DatabaseMessage(DatabaseMessageType.UPDATE, DatabaseEntity.Group,
+            group.setIdGrupo(groupId);
+            DatabaseMessage message = new DatabaseMessage(DatabaseMessageType.UPDATE, DatabaseEntity.Grupo,
                     DatabaseMethod.EditGroup, group);
-            sendDatabaseMessage(ctx, message, RestEntityMessage.Group.getAddress(), Group.class, 200);
+            sendDatabaseMessage(ctx, message, RestEntityMessage.Group.getAddress(), Grupo.class, 200);
         } catch (Exception e) {
             ctx.fail(400, e);
         }
@@ -373,9 +366,9 @@ public class RestAPIVerticle extends AbstractVerticle {
     private void getDevicesFromGroup(RoutingContext ctx) {
         try {
             int groupId = Integer.parseInt(ctx.request().getParam("groupid"));
-            DatabaseMessage message = new DatabaseMessage(DatabaseMessageType.SELECT, DatabaseEntity.Group,
+            DatabaseMessage message = new DatabaseMessage(DatabaseMessageType.SELECT, DatabaseEntity.Grupo,
                     DatabaseMethod.GetDevicesFromGroupId, groupId);
-            sendDatabaseMessageForList(ctx, message, RestEntityMessage.Group.getAddress(), Device[].class, 200);
+            sendDatabaseMessageForList(ctx, message, RestEntityMessage.Group.getAddress(), Placa[].class, 200);
         } catch (NumberFormatException e) {
             ctx.fail(400, e);
         }
@@ -389,13 +382,13 @@ public class RestAPIVerticle extends AbstractVerticle {
             int groupId = Integer.parseInt(ctx.request().getParam("groupid"));
             int deviceId = Integer.parseInt(ctx.request().getParam("deviceid"));
             
-            Device device = new Device();
-            device.setIdGroup(groupId);
-            device.setIdDevice(deviceId);
+            Placa device = new Placa();
+            device.setIdGrupo(groupId);
+            device.setIdPlaca(deviceId);
             
-            DatabaseMessage message = new DatabaseMessage(DatabaseMessageType.UPDATE, DatabaseEntity.Group,
+            DatabaseMessage message = new DatabaseMessage(DatabaseMessageType.UPDATE, DatabaseEntity.Grupo,
                     DatabaseMethod.AddDeviceToGroup, device);
-            sendDatabaseMessage(ctx, message, RestEntityMessage.Group.getAddress(), Device.class, 200);
+            sendDatabaseMessage(ctx, message, RestEntityMessage.Group.getAddress(), Placa.class, 200);
         } catch (NumberFormatException e) {
             ctx.fail(400, e);
         }
@@ -407,9 +400,9 @@ public class RestAPIVerticle extends AbstractVerticle {
      * Obtiene todos los dispositivos
      */
     private void getAllDevices(RoutingContext ctx) {
-        DatabaseMessage message = new DatabaseMessage(DatabaseMessageType.SELECT, DatabaseEntity.Device, 
+        DatabaseMessage message = new DatabaseMessage(DatabaseMessageType.SELECT, DatabaseEntity.Placa, 
                                                     DatabaseMethod.GetDevice, "");
-        sendDatabaseMessageForList(ctx, message, RestEntityMessage.Device.getAddress(), Device[].class, 200);
+        sendDatabaseMessageForList(ctx, message, RestEntityMessage.Device.getAddress(), Placa[].class, 200);
     }
 
     /**
@@ -418,9 +411,9 @@ public class RestAPIVerticle extends AbstractVerticle {
     private void getDeviceById(RoutingContext ctx) {
         try {
             int deviceId = Integer.parseInt(ctx.request().getParam("deviceid"));
-            DatabaseMessage message = new DatabaseMessage(DatabaseMessageType.SELECT, DatabaseEntity.Device,
+            DatabaseMessage message = new DatabaseMessage(DatabaseMessageType.SELECT, DatabaseEntity.Placa,
                     DatabaseMethod.GetDevice, deviceId);
-            sendDatabaseMessage(ctx, message, RestEntityMessage.Device.getAddress(), Device.class, 200);
+            sendDatabaseMessage(ctx, message, RestEntityMessage.Device.getAddress(), Placa.class, 200);
         } catch (NumberFormatException e) {
             ctx.fail(400, e);
         }
@@ -431,14 +424,14 @@ public class RestAPIVerticle extends AbstractVerticle {
      */
     private void addDevice(RoutingContext ctx) {
         try {
-            Device device = gson.fromJson(ctx.getBodyAsString(), Device.class);
-            if (device == null || device.getMqttChannel() == null) {
+        	Placa device = gson.fromJson(ctx.getBodyAsString(), Placa.class);
+            if (device == null || device.getMqttCh() == null) {
                 ctx.fail(400, new IllegalArgumentException("Datos de dispositivo inválidos"));
                 return;
             }
-            DatabaseMessage message = new DatabaseMessage(DatabaseMessageType.INSERT, DatabaseEntity.Device,
+            DatabaseMessage message = new DatabaseMessage(DatabaseMessageType.INSERT, DatabaseEntity.Placa,
                     DatabaseMethod.CreateDevice, device);
-            sendDatabaseMessage(ctx, message, RestEntityMessage.Device.getAddress(), Device.class, 201);
+            sendDatabaseMessage(ctx, message, RestEntityMessage.Device.getAddress(), Placa.class, 201);
         } catch (Exception e) {
             ctx.fail(400, e);
         }
@@ -449,13 +442,13 @@ public class RestAPIVerticle extends AbstractVerticle {
      */
     private void addDevicesBatch(RoutingContext ctx) {
         try {
-            Device[] devices = gson.fromJson(ctx.getBodyAsString(), Device[].class);
+        	Placa[] devices = gson.fromJson(ctx.getBodyAsString(), Placa[].class);
             List<DatabaseMessage> messages = java.util.Arrays.stream(devices)
-                .map(device -> new DatabaseMessage(DatabaseMessageType.INSERT, DatabaseEntity.Device, 
+                .map(device -> new DatabaseMessage(DatabaseMessageType.INSERT, DatabaseEntity.Placa, 
                                                  DatabaseMethod.CreateDevice, device))
                 .collect(Collectors.toList());
             
-            processBatchMessages(ctx, messages, RestEntityMessage.Device.getAddress(), Device[].class);
+            processBatchMessages(ctx, messages, RestEntityMessage.Device.getAddress(), Placa[].class);
         } catch (Exception e) {
             ctx.fail(400, e);
         }
@@ -467,9 +460,9 @@ public class RestAPIVerticle extends AbstractVerticle {
     private void deleteDevice(RoutingContext ctx) {
         try {
             int deviceId = Integer.parseInt(ctx.request().getParam("deviceid"));
-            DatabaseMessage message = new DatabaseMessage(DatabaseMessageType.DELETE, DatabaseEntity.Device,
+            DatabaseMessage message = new DatabaseMessage(DatabaseMessageType.DELETE, DatabaseEntity.Placa,
                     DatabaseMethod.DeleteDevice, deviceId);
-            sendDatabaseMessage(ctx, message, RestEntityMessage.Device.getAddress(), Device.class, 200);
+            sendDatabaseMessage(ctx, message, RestEntityMessage.Device.getAddress(), Placa.class, 200);
         } catch (NumberFormatException e) {
             ctx.fail(400, e);
         }
@@ -481,15 +474,15 @@ public class RestAPIVerticle extends AbstractVerticle {
     private void putDevice(RoutingContext ctx) {
         try {
             int deviceId = Integer.parseInt(ctx.request().getParam("deviceid"));
-            Device device = gson.fromJson(ctx.getBodyAsString(), Device.class);
+            Placa device = gson.fromJson(ctx.getBodyAsString(), Placa.class);
             if (device == null) {
                 ctx.fail(400, new IllegalArgumentException("Datos de dispositivo inválidos"));
                 return;
             }
-            device.setIdDevice(deviceId);
-            DatabaseMessage message = new DatabaseMessage(DatabaseMessageType.UPDATE, DatabaseEntity.Device,
+            device.setIdPlaca(deviceId);
+            DatabaseMessage message = new DatabaseMessage(DatabaseMessageType.UPDATE, DatabaseEntity.Placa,
                     DatabaseMethod.EditDevice, device);
-            sendDatabaseMessage(ctx, message, RestEntityMessage.Device.getAddress(), Device.class, 200);
+            sendDatabaseMessage(ctx, message, RestEntityMessage.Device.getAddress(), Placa.class, 200);
         } catch (Exception e) {
             ctx.fail(400, e);
         }
@@ -501,9 +494,9 @@ public class RestAPIVerticle extends AbstractVerticle {
     private void getSensorsFromDevice(RoutingContext ctx) {
         try {
             int deviceId = Integer.parseInt(ctx.request().getParam("deviceid"));
-            DatabaseMessage message = new DatabaseMessage(DatabaseMessageType.SELECT, DatabaseEntity.Device,
+            DatabaseMessage message = new DatabaseMessage(DatabaseMessageType.SELECT, DatabaseEntity.Placa,
                     DatabaseMethod.GetSensorsFromDeviceId, deviceId);
-            sendDatabaseMessageForList(ctx, message, RestEntityMessage.Device.getAddress(), Sensor[].class, 200);
+            sendDatabaseMessageForList(ctx, message, RestEntityMessage.Device.getAddress(), SensorAire[].class, 200);
         } catch (NumberFormatException e) {
             ctx.fail(400, e);
         }
@@ -515,9 +508,9 @@ public class RestAPIVerticle extends AbstractVerticle {
     private void getActuatorsFromDevice(RoutingContext ctx) {
         try {
             int deviceId = Integer.parseInt(ctx.request().getParam("deviceid"));
-            DatabaseMessage message = new DatabaseMessage(DatabaseMessageType.SELECT, DatabaseEntity.Device,
+            DatabaseMessage message = new DatabaseMessage(DatabaseMessageType.SELECT, DatabaseEntity.Placa,
                     DatabaseMethod.GetActuatorsFromDeviceId, deviceId);
-            sendDatabaseMessageForList(ctx, message, RestEntityMessage.Device.getAddress(), Actuator[].class, 200);
+            sendDatabaseMessageForList(ctx, message, RestEntityMessage.Device.getAddress(), Ventilador[].class, 200);
         } catch (NumberFormatException e) {
             ctx.fail(400, e);
         }
@@ -532,9 +525,9 @@ public class RestAPIVerticle extends AbstractVerticle {
             SensorType type = SensorType.valueOf(ctx.request().getParam("type"));
             
             DatabaseMessageIdAndSensorType query = new DatabaseMessageIdAndSensorType(deviceId, type);
-            DatabaseMessage message = new DatabaseMessage(DatabaseMessageType.SELECT, DatabaseEntity.Device,
+            DatabaseMessage message = new DatabaseMessage(DatabaseMessageType.SELECT, DatabaseEntity.Placa,
                     DatabaseMethod.GetSensorsFromDeviceIdAndSensorType, query);
-            sendDatabaseMessageForList(ctx, message, RestEntityMessage.Device.getAddress(), Sensor[].class, 200);
+            sendDatabaseMessageForList(ctx, message, RestEntityMessage.Device.getAddress(), SensorAire[].class, 200);
         } catch (Exception e) {
             ctx.fail(400, e);
         }
@@ -549,9 +542,9 @@ public class RestAPIVerticle extends AbstractVerticle {
             ActuatorType type = ActuatorType.valueOf(ctx.request().getParam("type"));
             
             DatabaseMessageIdAndActuatorType query = new DatabaseMessageIdAndActuatorType(deviceId, type);
-            DatabaseMessage message = new DatabaseMessage(DatabaseMessageType.SELECT, DatabaseEntity.Device,
+            DatabaseMessage message = new DatabaseMessage(DatabaseMessageType.SELECT, DatabaseEntity.Placa,
                     DatabaseMethod.GetActuatorsFromDeviceIdAndActuatorType, query);
-            sendDatabaseMessageForList(ctx, message, RestEntityMessage.Device.getAddress(), Actuator[].class, 200);
+            sendDatabaseMessageForList(ctx, message, RestEntityMessage.Device.getAddress(), Ventilador[].class, 200);
         } catch (Exception e) {
             ctx.fail(400, e);
         }
@@ -563,9 +556,9 @@ public class RestAPIVerticle extends AbstractVerticle {
      * Obtiene todos los sensores
      */
     private void getAllSensors(RoutingContext ctx) {
-        DatabaseMessage message = new DatabaseMessage(DatabaseMessageType.SELECT, DatabaseEntity.Sensor, 
+        DatabaseMessage message = new DatabaseMessage(DatabaseMessageType.SELECT, DatabaseEntity.SensorAire, 
                                                     DatabaseMethod.GetSensor, "");
-        sendDatabaseMessageForList(ctx, message, RestEntityMessage.Sensor.getAddress(), Sensor[].class, 200);
+        sendDatabaseMessageForList(ctx, message, RestEntityMessage.Sensor.getAddress(), SensorAire[].class, 200);
     }
 
     /**
@@ -574,9 +567,9 @@ public class RestAPIVerticle extends AbstractVerticle {
     private void getSensorById(RoutingContext ctx) {
         try {
             int sensorId = Integer.parseInt(ctx.request().getParam("sensorid"));
-            DatabaseMessage message = new DatabaseMessage(DatabaseMessageType.SELECT, DatabaseEntity.Sensor,
+            DatabaseMessage message = new DatabaseMessage(DatabaseMessageType.SELECT, DatabaseEntity.SensorAire,
                     DatabaseMethod.GetSensor, sensorId);
-            sendDatabaseMessage(ctx, message, RestEntityMessage.Sensor.getAddress(), Sensor.class, 200);
+            sendDatabaseMessage(ctx, message, RestEntityMessage.Sensor.getAddress(), SensorAire.class, 200);
         } catch (NumberFormatException e) {
             ctx.fail(400, e);
         }
@@ -587,14 +580,14 @@ public class RestAPIVerticle extends AbstractVerticle {
      */
     private void addSensor(RoutingContext ctx) {
         try {
-            Sensor sensor = gson.fromJson(ctx.getBodyAsString(), Sensor.class);
-            if (sensor == null || sensor.getIdDevice() == null || sensor.getSensorType() == null) {
+        	SensorAire sensor = gson.fromJson(ctx.getBodyAsString(), SensorAire.class);
+            if (sensor == null || sensor.getIdSensor() == null ) {
                 ctx.fail(400, new IllegalArgumentException("Datos de sensor inválidos"));
                 return;
             }
-            DatabaseMessage message = new DatabaseMessage(DatabaseMessageType.INSERT, DatabaseEntity.Sensor,
+            DatabaseMessage message = new DatabaseMessage(DatabaseMessageType.INSERT, DatabaseEntity.SensorAire,
                     DatabaseMethod.CreateSensor, sensor);
-            sendDatabaseMessage(ctx, message, RestEntityMessage.Sensor.getAddress(), Sensor.class, 201);
+            sendDatabaseMessage(ctx, message, RestEntityMessage.Sensor.getAddress(), SensorAire.class, 201);
         } catch (Exception e) {
             ctx.fail(400, e);
         }
@@ -605,13 +598,13 @@ public class RestAPIVerticle extends AbstractVerticle {
      */
     private void addSensorsBatch(RoutingContext ctx) {
         try {
-            Sensor[] sensors = gson.fromJson(ctx.getBodyAsString(), Sensor[].class);
+        	SensorAire[] sensors = gson.fromJson(ctx.getBodyAsString(), SensorAire[].class);
             List<DatabaseMessage> messages = java.util.Arrays.stream(sensors)
-                .map(sensor -> new DatabaseMessage(DatabaseMessageType.INSERT, DatabaseEntity.Sensor, 
+                .map(sensor -> new DatabaseMessage(DatabaseMessageType.INSERT, DatabaseEntity.SensorAire, 
                                                  DatabaseMethod.CreateSensor, sensor))
                 .collect(Collectors.toList());
             
-            processBatchMessages(ctx, messages, RestEntityMessage.Sensor.getAddress(), Sensor[].class);
+            processBatchMessages(ctx, messages, RestEntityMessage.Sensor.getAddress(), SensorAire[].class);
         } catch (Exception e) {
             ctx.fail(400, e);
         }
@@ -623,9 +616,9 @@ public class RestAPIVerticle extends AbstractVerticle {
     private void deleteSensor(RoutingContext ctx) {
         try {
             int sensorId = Integer.parseInt(ctx.request().getParam("sensorid"));
-            DatabaseMessage message = new DatabaseMessage(DatabaseMessageType.DELETE, DatabaseEntity.Sensor,
+            DatabaseMessage message = new DatabaseMessage(DatabaseMessageType.DELETE, DatabaseEntity.SensorAire,
                     DatabaseMethod.DeleteSensor, sensorId);
-            sendDatabaseMessage(ctx, message, RestEntityMessage.Sensor.getAddress(), Sensor.class, 200);
+            sendDatabaseMessage(ctx, message, RestEntityMessage.Sensor.getAddress(), SensorAire.class, 200);
         } catch (NumberFormatException e) {
             ctx.fail(400, e);
         }
@@ -637,15 +630,15 @@ public class RestAPIVerticle extends AbstractVerticle {
     private void putSensor(RoutingContext ctx) {
         try {
             int sensorId = Integer.parseInt(ctx.request().getParam("sensorid"));
-            Sensor sensor = gson.fromJson(ctx.getBodyAsString(), Sensor.class);
+            SensorAire sensor = gson.fromJson(ctx.getBodyAsString(), SensorAire.class);
             if (sensor == null) {
                 ctx.fail(400, new IllegalArgumentException("Datos de sensor inválidos"));
                 return;
             }
             sensor.setIdSensor(sensorId);
-            DatabaseMessage message = new DatabaseMessage(DatabaseMessageType.UPDATE, DatabaseEntity.Sensor,
+            DatabaseMessage message = new DatabaseMessage(DatabaseMessageType.UPDATE, DatabaseEntity.SensorAire,
                     DatabaseMethod.EditSensor, sensor);
-            sendDatabaseMessage(ctx, message, RestEntityMessage.Sensor.getAddress(), Sensor.class, 200);
+            sendDatabaseMessage(ctx, message, RestEntityMessage.Sensor.getAddress(), SensorAire.class, 200);
         } catch (Exception e) {
             ctx.fail(400, e);
         }
@@ -657,9 +650,9 @@ public class RestAPIVerticle extends AbstractVerticle {
      * Obtiene todos los actuadores
      */
     private void getAllActuators(RoutingContext ctx) {
-        DatabaseMessage message = new DatabaseMessage(DatabaseMessageType.SELECT, DatabaseEntity.Actuator, 
+        DatabaseMessage message = new DatabaseMessage(DatabaseMessageType.SELECT, DatabaseEntity.Ventilador, 
                                                     DatabaseMethod.GetActuator, "");
-        sendDatabaseMessageForList(ctx, message, RestEntityMessage.Actuator.getAddress(), Actuator[].class, 200);
+        sendDatabaseMessageForList(ctx, message, RestEntityMessage.Actuator.getAddress(), Ventilador[].class, 200);
     }
 
     /**
@@ -668,9 +661,9 @@ public class RestAPIVerticle extends AbstractVerticle {
     private void getActuatorById(RoutingContext ctx) {
         try {
             int actuatorId = Integer.parseInt(ctx.request().getParam("actuatorid"));
-            DatabaseMessage message = new DatabaseMessage(DatabaseMessageType.SELECT, DatabaseEntity.Actuator,
+            DatabaseMessage message = new DatabaseMessage(DatabaseMessageType.SELECT, DatabaseEntity.Ventilador,
                     DatabaseMethod.GetActuator, actuatorId);
-            sendDatabaseMessage(ctx, message, RestEntityMessage.Actuator.getAddress(), Actuator.class, 200);
+            sendDatabaseMessage(ctx, message, RestEntityMessage.Actuator.getAddress(), Ventilador.class, 200);
         } catch (NumberFormatException e) {
             ctx.fail(400, e);
         }
@@ -681,14 +674,14 @@ public class RestAPIVerticle extends AbstractVerticle {
      */
     private void addActuator(RoutingContext ctx) {
         try {
-            Actuator actuator = gson.fromJson(ctx.getBodyAsString(), Actuator.class);
-            if (actuator == null || actuator.getIdDevice() == null || actuator.getActuatorType() == null) {
+        	Ventilador actuator = gson.fromJson(ctx.getBodyAsString(), Ventilador.class);
+            if (actuator == null || actuator.getIdVentilador() == null ) {
                 ctx.fail(400, new IllegalArgumentException("Datos de actuador inválidos"));
                 return;
             }
-            DatabaseMessage message = new DatabaseMessage(DatabaseMessageType.INSERT, DatabaseEntity.Actuator,
+            DatabaseMessage message = new DatabaseMessage(DatabaseMessageType.INSERT, DatabaseEntity.Ventilador,
                     DatabaseMethod.CreateActuator, actuator);
-            sendDatabaseMessage(ctx, message, RestEntityMessage.Actuator.getAddress(), Actuator.class, 201);
+            sendDatabaseMessage(ctx, message, RestEntityMessage.Actuator.getAddress(), Ventilador.class, 201);
         } catch (Exception e) {
             ctx.fail(400, e);
         }
@@ -699,13 +692,13 @@ public class RestAPIVerticle extends AbstractVerticle {
      */
     private void addActuatorsBatch(RoutingContext ctx) {
         try {
-            Actuator[] actuators = gson.fromJson(ctx.getBodyAsString(), Actuator[].class);
+        	Ventilador[] actuators = gson.fromJson(ctx.getBodyAsString(), Ventilador[].class);
             List<DatabaseMessage> messages = java.util.Arrays.stream(actuators)
-                .map(actuator -> new DatabaseMessage(DatabaseMessageType.INSERT, DatabaseEntity.Actuator, 
+                .map(actuator -> new DatabaseMessage(DatabaseMessageType.INSERT, DatabaseEntity.Ventilador, 
                                                    DatabaseMethod.CreateActuator, actuator))
                 .collect(Collectors.toList());
             
-            processBatchMessages(ctx, messages, RestEntityMessage.Actuator.getAddress(), Actuator[].class);
+            processBatchMessages(ctx, messages, RestEntityMessage.Actuator.getAddress(), Ventilador[].class);
         } catch (Exception e) {
             ctx.fail(400, e);
         }
@@ -717,9 +710,9 @@ public class RestAPIVerticle extends AbstractVerticle {
     private void deleteActuator(RoutingContext ctx) {
         try {
             int actuatorId = Integer.parseInt(ctx.request().getParam("actuatorid"));
-            DatabaseMessage message = new DatabaseMessage(DatabaseMessageType.DELETE, DatabaseEntity.Actuator,
+            DatabaseMessage message = new DatabaseMessage(DatabaseMessageType.DELETE, DatabaseEntity.Ventilador,
                     DatabaseMethod.DeleteActuator, actuatorId);
-            sendDatabaseMessage(ctx, message, RestEntityMessage.Actuator.getAddress(), Actuator.class, 200);
+            sendDatabaseMessage(ctx, message, RestEntityMessage.Actuator.getAddress(), Ventilador.class, 200);
         } catch (NumberFormatException e) {
             ctx.fail(400, e);
         }
@@ -731,15 +724,15 @@ public class RestAPIVerticle extends AbstractVerticle {
     private void putActuator(RoutingContext ctx) {
         try {
             int actuatorId = Integer.parseInt(ctx.request().getParam("actuatorid"));
-            Actuator actuator = gson.fromJson(ctx.getBodyAsString(), Actuator.class);
+            Ventilador actuator = gson.fromJson(ctx.getBodyAsString(), Ventilador.class);
             if (actuator == null) {
                 ctx.fail(400, new IllegalArgumentException("Datos de actuador inválidos"));
                 return;
             }
-            actuator.setIdActuator(actuatorId);
-            DatabaseMessage message = new DatabaseMessage(DatabaseMessageType.UPDATE, DatabaseEntity.Actuator,
+            actuator.setIdVentilador(actuatorId);
+            DatabaseMessage message = new DatabaseMessage(DatabaseMessageType.UPDATE, DatabaseEntity.Ventilador,
                     DatabaseMethod.EditActuator, actuator);
-            sendDatabaseMessage(ctx, message, RestEntityMessage.Actuator.getAddress(), Actuator.class, 200);
+            sendDatabaseMessage(ctx, message, RestEntityMessage.Actuator.getAddress(), Ventilador.class, 200);
         } catch (Exception e) {
             ctx.fail(400, e);
         }
@@ -751,9 +744,9 @@ public class RestAPIVerticle extends AbstractVerticle {
      * Obtiene todos los valores de sensores
      */
     private void getAllSensorValues(RoutingContext ctx) {
-        DatabaseMessage message = new DatabaseMessage(DatabaseMessageType.SELECT, DatabaseEntity.SensorValue, 
+        DatabaseMessage message = new DatabaseMessage(DatabaseMessageType.SELECT, DatabaseEntity.SensorAire, 
                                                     DatabaseMethod.GetSensor, "");
-        sendDatabaseMessageForList(ctx, message, RestEntityMessage.SensorValue.getAddress(), SensorValue[].class, 200);
+        sendDatabaseMessageForList(ctx, message, RestEntityMessage.SensorValue.getAddress(), SensorAire[].class, 200);
     }
 
     /**
@@ -761,17 +754,17 @@ public class RestAPIVerticle extends AbstractVerticle {
      */
     private void addSensorValue(RoutingContext ctx) {
         try {
-            SensorValue sensorValue = gson.fromJson(ctx.getBodyAsString(), SensorValue.class);
-            if (sensorValue == null || sensorValue.getIdSensor() == null || sensorValue.getValue() == null) {
+        	SensorAire sensorValue = gson.fromJson(ctx.getBodyAsString(), SensorAire.class);
+            if (sensorValue == null || sensorValue.getIdSensor() == null || sensorValue.getValor() == null) {
                 ctx.fail(400, new IllegalArgumentException("Datos de valor de sensor inválidos"));
                 return;
             }
             if (sensorValue.getTimestamp() == null) {
                 sensorValue.setTimestamp(Calendar.getInstance().getTimeInMillis());
             }
-            DatabaseMessage message = new DatabaseMessage(DatabaseMessageType.INSERT, DatabaseEntity.SensorValue,
+            DatabaseMessage message = new DatabaseMessage(DatabaseMessageType.INSERT, DatabaseEntity.SensorAire,
                     DatabaseMethod.CreateSensorValue, sensorValue);
-            sendDatabaseMessage(ctx, message, RestEntityMessage.SensorValue.getAddress(), SensorValue.class, 201);
+            sendDatabaseMessage(ctx, message, RestEntityMessage.SensorValue.getAddress(), SensorAire.class, 201);
         } catch (Exception e) {
             ctx.fail(400, e);
         }
@@ -782,13 +775,13 @@ public class RestAPIVerticle extends AbstractVerticle {
      */
     private void addSensorValuesBatch(RoutingContext ctx) {
         try {
-            SensorValue[] sensorValues = gson.fromJson(ctx.getBodyAsString(), SensorValue[].class);
+        	SensorAire[] sensorValues = gson.fromJson(ctx.getBodyAsString(), SensorAire[].class);
             List<DatabaseMessage> messages = java.util.Arrays.stream(sensorValues)
-                .map(sensorValue -> new DatabaseMessage(DatabaseMessageType.INSERT, DatabaseEntity.SensorValue, 
+                .map(sensorValue -> new DatabaseMessage(DatabaseMessageType.INSERT, DatabaseEntity.SensorAire, 
                                                       DatabaseMethod.CreateSensorValue, sensorValue))
                 .collect(Collectors.toList());
             
-            processBatchMessages(ctx, messages, RestEntityMessage.SensorValue.getAddress(), SensorValue[].class);
+            processBatchMessages(ctx, messages, RestEntityMessage.SensorValue.getAddress(), SensorAire[].class);
         } catch (Exception e) {
             ctx.fail(400, e);
         }
@@ -800,9 +793,9 @@ public class RestAPIVerticle extends AbstractVerticle {
     private void deleteSensorValue(RoutingContext ctx) {
         try {
             int sensorValueId = Integer.parseInt(ctx.request().getParam("sensorvalueid"));
-            DatabaseMessage message = new DatabaseMessage(DatabaseMessageType.DELETE, DatabaseEntity.SensorValue,
+            DatabaseMessage message = new DatabaseMessage(DatabaseMessageType.DELETE, DatabaseEntity.SensorAire,
                     DatabaseMethod.DeleteSensorValue, sensorValueId);
-            sendDatabaseMessage(ctx, message, RestEntityMessage.SensorValue.getAddress(), SensorValue.class, 200);
+            sendDatabaseMessage(ctx, message, RestEntityMessage.SensorValue.getAddress(), SensorAire.class, 200);
         } catch (NumberFormatException e) {
             ctx.fail(400, e);
         }
@@ -814,9 +807,9 @@ public class RestAPIVerticle extends AbstractVerticle {
     private void getLastSensorValue(RoutingContext ctx) {
         try {
             int sensorId = Integer.parseInt(ctx.request().getParam("sensorid"));
-            DatabaseMessage message = new DatabaseMessage(DatabaseMessageType.SELECT, DatabaseEntity.SensorValue,
+            DatabaseMessage message = new DatabaseMessage(DatabaseMessageType.SELECT, DatabaseEntity.SensorAire,
                     DatabaseMethod.GetLastSensorValueFromSensorId, sensorId);
-            sendDatabaseMessage(ctx, message, RestEntityMessage.SensorValue.getAddress(), SensorValue.class, 200);
+            sendDatabaseMessage(ctx, message, RestEntityMessage.SensorValue.getAddress(), SensorAire.class, 200);
         } catch (NumberFormatException e) {
             ctx.fail(400, e);
         }
@@ -831,9 +824,9 @@ public class RestAPIVerticle extends AbstractVerticle {
             int limit = Integer.parseInt(ctx.request().getParam("limit"));
             
             DatabaseMessageLatestValues query = new DatabaseMessageLatestValues(sensorId, limit);
-            DatabaseMessage message = new DatabaseMessage(DatabaseMessageType.SELECT, DatabaseEntity.SensorValue,
+            DatabaseMessage message = new DatabaseMessage(DatabaseMessageType.SELECT, DatabaseEntity.SensorAire,
                     DatabaseMethod.GetLatestSensorValuesFromSensorId, query);
-            sendDatabaseMessageForList(ctx, message, RestEntityMessage.SensorValue.getAddress(), SensorValue[].class, 200);
+            sendDatabaseMessageForList(ctx, message, RestEntityMessage.SensorValue.getAddress(), SensorAire[].class, 200);
         } catch (Exception e) {
             ctx.fail(400, e);
         }
@@ -847,7 +840,7 @@ public class RestAPIVerticle extends AbstractVerticle {
             int groupId = Integer.parseInt(ctx.request().getParam("groupid"));
             DatabaseMessage message = new DatabaseMessage(
                     DatabaseMessageType.SELECT,
-                    DatabaseEntity.SensorValue,
+                    DatabaseEntity.SensorAire,
                     DatabaseMethod.GetLastSensorValuesFromGroupId,
                     groupId
             );
@@ -863,9 +856,9 @@ public class RestAPIVerticle extends AbstractVerticle {
      * Obtiene todos los estados de actuadores
      */
     private void getAllActuatorStates(RoutingContext ctx) {
-        DatabaseMessage message = new DatabaseMessage(DatabaseMessageType.SELECT, DatabaseEntity.ActuatorStatus, 
+        DatabaseMessage message = new DatabaseMessage(DatabaseMessageType.SELECT, DatabaseEntity.Ventilador, 
                                                     DatabaseMethod.GetActuator, "");
-        sendDatabaseMessageForList(ctx, message, RestEntityMessage.ActuatorStatus.getAddress(), ActuatorStatus[].class, 200);
+        sendDatabaseMessageForList(ctx, message, RestEntityMessage.ActuatorStatus.getAddress(), Ventilador[].class, 200);
     }
 
     /**
@@ -873,17 +866,17 @@ public class RestAPIVerticle extends AbstractVerticle {
      */
     private void addActuatorStatus(RoutingContext ctx) {
         try {
-            ActuatorStatus actuatorStatus = gson.fromJson(ctx.getBodyAsString(), ActuatorStatus.class);
-            if (actuatorStatus == null || actuatorStatus.getIdActuator() == null || actuatorStatus.getStatus() == null) {
+        	Ventilador actuatorStatus = gson.fromJson(ctx.getBodyAsString(), Ventilador.class);
+            if (actuatorStatus == null || actuatorStatus.getIdVentilador() == null ) {
                 ctx.fail(400, new IllegalArgumentException("Datos de estado de actuador inválidos"));
                 return;
             }
             if (actuatorStatus.getTimestamp() == null) {
                 actuatorStatus.setTimestamp(Calendar.getInstance().getTimeInMillis());
             }
-            DatabaseMessage message = new DatabaseMessage(DatabaseMessageType.INSERT, DatabaseEntity.ActuatorStatus,
+            DatabaseMessage message = new DatabaseMessage(DatabaseMessageType.INSERT, DatabaseEntity.Ventilador,
                     DatabaseMethod.CreateActuatorStatus, actuatorStatus);
-            sendDatabaseMessage(ctx, message, RestEntityMessage.ActuatorStatus.getAddress(), ActuatorStatus.class, 201);
+            sendDatabaseMessage(ctx, message, RestEntityMessage.ActuatorStatus.getAddress(), Ventilador.class, 201);
         } catch (Exception e) {
             ctx.fail(400, e);
         }
@@ -894,13 +887,13 @@ public class RestAPIVerticle extends AbstractVerticle {
      */
     private void addActuatorStatesBatch(RoutingContext ctx) {
         try {
-            ActuatorStatus[] actuatorStates = gson.fromJson(ctx.getBodyAsString(), ActuatorStatus[].class);
+        	Ventilador[] actuatorStates = gson.fromJson(ctx.getBodyAsString(), Ventilador[].class);
             List<DatabaseMessage> messages = java.util.Arrays.stream(actuatorStates)
-                .map(actuatorStatus -> new DatabaseMessage(DatabaseMessageType.INSERT, DatabaseEntity.ActuatorStatus, 
+                .map(actuatorStatus -> new DatabaseMessage(DatabaseMessageType.INSERT, DatabaseEntity.Ventilador, 
                                                          DatabaseMethod.CreateActuatorStatus, actuatorStatus))
                 .collect(Collectors.toList());
             
-            processBatchMessages(ctx, messages, RestEntityMessage.ActuatorStatus.getAddress(), ActuatorStatus[].class);
+            processBatchMessages(ctx, messages, RestEntityMessage.ActuatorStatus.getAddress(), Ventilador[].class);
         } catch (Exception e) {
             ctx.fail(400, e);
         }
@@ -912,9 +905,9 @@ public class RestAPIVerticle extends AbstractVerticle {
     private void deleteActuatorStatus(RoutingContext ctx) {
         try {
             int actuatorStatusId = Integer.parseInt(ctx.request().getParam("actuatorstatusid"));
-            DatabaseMessage message = new DatabaseMessage(DatabaseMessageType.DELETE, DatabaseEntity.ActuatorStatus,
+            DatabaseMessage message = new DatabaseMessage(DatabaseMessageType.DELETE, DatabaseEntity.Ventilador,
                     DatabaseMethod.DeleteActuatorStatus, actuatorStatusId);
-            sendDatabaseMessage(ctx, message, RestEntityMessage.ActuatorStatus.getAddress(), ActuatorStatus.class, 200);
+            sendDatabaseMessage(ctx, message, RestEntityMessage.ActuatorStatus.getAddress(), Ventilador.class, 200);
         } catch (NumberFormatException e) {
             ctx.fail(400, e);
         }
@@ -926,9 +919,9 @@ public class RestAPIVerticle extends AbstractVerticle {
     private void getLastActuatorStatus(RoutingContext ctx) {
         try {
             int actuatorId = Integer.parseInt(ctx.request().getParam("actuatorid"));
-            DatabaseMessage message = new DatabaseMessage(DatabaseMessageType.SELECT, DatabaseEntity.ActuatorStatus,
+            DatabaseMessage message = new DatabaseMessage(DatabaseMessageType.SELECT, DatabaseEntity.Ventilador,
                     DatabaseMethod.GetLastActuatorStatusFromActuatorId, actuatorId);
-            sendDatabaseMessage(ctx, message, RestEntityMessage.ActuatorStatus.getAddress(), ActuatorStatus.class, 200);
+            sendDatabaseMessage(ctx, message, RestEntityMessage.ActuatorStatus.getAddress(), Ventilador.class, 200);
         } catch (NumberFormatException e) {
             ctx.fail(400, e);
         }
@@ -943,9 +936,9 @@ public class RestAPIVerticle extends AbstractVerticle {
             int limit = Integer.parseInt(ctx.request().getParam("limit"));
             
             DatabaseMessageLatestValues query = new DatabaseMessageLatestValues(actuatorId, limit);
-            DatabaseMessage message = new DatabaseMessage(DatabaseMessageType.SELECT, DatabaseEntity.ActuatorStatus,
+            DatabaseMessage message = new DatabaseMessage(DatabaseMessageType.SELECT, DatabaseEntity.Ventilador,
                     DatabaseMethod.GetLatestActuatorStatesFromActuatorId, query);
-            sendDatabaseMessageForList(ctx, message, RestEntityMessage.ActuatorStatus.getAddress(), ActuatorStatus[].class, 200);
+            sendDatabaseMessageForList(ctx, message, RestEntityMessage.ActuatorStatus.getAddress(), Ventilador[].class, 200);
         } catch (Exception e) {
             ctx.fail(400, e);
         }
@@ -959,7 +952,7 @@ public class RestAPIVerticle extends AbstractVerticle {
             int groupId = Integer.parseInt(ctx.request().getParam("groupid"));
             DatabaseMessage message = new DatabaseMessage(
                     DatabaseMessageType.SELECT,
-                    DatabaseEntity.ActuatorStatus,
+                    DatabaseEntity.Ventilador,
                     DatabaseMethod.GetLastActuatorStatesFromGroupId,
                     groupId
             );
@@ -1019,7 +1012,7 @@ public class RestAPIVerticle extends AbstractVerticle {
     @Override
     public void stop(Future<Void> stopFuture) throws Exception {
         // Limpiar datos al detener el verticle
-        groups.clear();
+        //groups.clear();
         super.stop(stopFuture);
     }
 }
