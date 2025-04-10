@@ -3,10 +3,9 @@ package es.us.dad.controllers;
 import java.util.Calendar;
 
 import es.us.dad.mqtt.MqttClientUtil;
-import es.us.dad.mysql.entities.Device;
-import es.us.dad.mysql.entities.Group;
-import es.us.dad.mysql.entities.Sensor;
-import es.us.dad.mysql.entities.SensorValue;
+import es.us.dad.mysql.entities.Grupo;
+import es.us.dad.mysql.entities.Placa;
+import es.us.dad.mysql.entities.SensorAire;
 import es.us.dad.mysql.messages.DatabaseEntity;
 import es.us.dad.mysql.messages.DatabaseMessage;
 import es.us.dad.mysql.messages.DatabaseMessageType;
@@ -16,138 +15,109 @@ import io.vertx.core.Future;
 import io.vertx.core.Promise;
 
 /**
- * Controller associated with the SensorValue entity. It will perform all
- * operations related to this entity at the request of the Verticle deploying
- * the Rest API. This class extends the basic functionality implemented by the
- * AbstractController class.
- * 
- * @author luismi
- *
+ * Controller associated with the SensorValue entity.
  */
 public class SensorValuesController extends AbstractController {
 
-    // Umbral de temperatura para activar/desactivar el buzzer
     private static final double TEMPERATURE_THRESHOLD = 30.0;
 
-    /**
-     * Constructor of the class where the type of entity managed by the class is
-     * indicated to the AbstractController class where the basic functionality of
-     * the controllers is defined.
-     */
     public SensorValuesController() {
-        super(DatabaseEntity.SensorValue);
+        super(DatabaseEntity.SensorAire);
     }
 
-    /**
-     * Method that allows the Verticle to be launched. This method will deploy the
-     * handler that will later attend the usage requests made by the Rest API. The
-     * channel to which this handler is associated will depend on the entity
-     * controlled by each controller. In this case, the entity is SensorValue. Note
-     * that in this case, the communication channel is not given by the
-     * DatabaseEntity class, but through the RestEntityMessage class. This is due to
-     * the need to define different channel names to avoid overlapping messages
-     * coming from the communication between the controller and the data access
-     * layer.
-     */
     public void start(Promise<Void> startFuture) {
         MqttClientUtil mqttClientUtil = MqttClientUtil.getInstance(vertx);
+
         getVertx().eventBus().consumer(RestEntityMessage.SensorValue.getAddress(), message -> {
             DatabaseMessage databaseMessage = gson.fromJson((String) message.body(), DatabaseMessage.class);
-            /*
-             * The switch considers all the messages that can be managed by this controller
-             * and delegates them to the launchDatabaseOperation method of the
-             * AbstractController class, which sends the original message to be processed by
-             * the data access Verticle. Note that this switch is not necessary unless there
-             * are methods in which the operations are different from the one described
-             * above. However, for clarity, it has been decided to make explicit the values
-             * of the enumerated DatabaseMethod that manages each controller. This
-             * implementation assumes that the message coming from the Rest API is well
-             * defined so that it can be reused in the request at the data access layer.
-             */
+
             switch (databaseMessage.getMethod()) {
                 case CreateSensorValue:
                     launchDatabaseOperation(message);
-                    SensorValue sensorValue = databaseMessage.getRequestBodyAs(SensorValue.class);
+                    SensorAire sensorValue = databaseMessage.getRequestBodyAs(SensorAire.class);
 
-                    // Obtener la entidad sensor a partir del idSensor presente en SensorValue
-                    launchDatabaseOperation(DatabaseEntity.Sensor,
-                            new DatabaseMessage(DatabaseMessageType.SELECT, DatabaseEntity.Sensor,
+                    // Obtener la entidad Sensor
+                    launchDatabaseOperation(DatabaseEntity.SensorAire,
+                            new DatabaseMessage(DatabaseMessageType.SELECT, DatabaseEntity.SensorAire,
                                     DatabaseMethod.GetSensor, sensorValue.getIdSensor()))
                             .future().onComplete(res -> {
-                                if (res.succeeded()) {
-                                    Sensor sensor = res.result().getResponseBodyAs(Sensor.class);
-                                    if (sensor != null) {
-                                        // Obtener la entidad dispositivo a partir del idDevice presente en Sensor
-                                        launchDatabaseOperation(DatabaseEntity.Device,
-                                                new DatabaseMessage(DatabaseMessageType.SELECT, DatabaseEntity.Device,
-                                                        DatabaseMethod.GetDevice, sensor.getIdDevice()))
-                                                .future().onComplete(resDevice -> {
-                                                    Device device = resDevice.result().getResponseBodyAs(Device.class);
-                                                    if (resDevice.succeeded()) {
-                                                        // Publicar el mensaje MQTT en el canal del dispositivo
-                                                        mqttClientUtil.publishMqttMessage(device.getMqttChannel(),
-                                                                gson.toJson(sensorValue), handler -> {
-                                                                    System.out.println(handler.result());
-                                                                });
+                                if (res.succeeded() && res.result() != null) {
+                                    SensorAire sensor = res.result().getResponseBodyAs(SensorAire.class);
 
-                                                        // Obtener la entidad grupo a partir del idGroup presente en Device
-                                                        launchDatabaseOperation(DatabaseEntity.Group,
-                                                                new DatabaseMessage(DatabaseMessageType.SELECT,
-                                                                        DatabaseEntity.Group, DatabaseMethod.GetGroup,
-                                                                        device.getIdGroup()))
-                                                                .future().onComplete(resGroup -> {
-                                                                    Group group = resGroup.result()
-                                                                            .getResponseBodyAs(Group.class);
-                                                                    if (resGroup.succeeded()) {
-                                                                        // Publicar el mensaje MQTT en el canal del grupo
-                                                                        if (sensorValue.getValue() > TEMPERATURE_THRESHOLD) {
-                                                                            mqttClientUtil.publishMqttMessage(group.getMqttChannel(),
-                                                                                    "1", handler -> {
-                                                                                        System.out.println(handler.result());
-                                                                                    });
-                                                                        } else {
-                                                                            mqttClientUtil.publishMqttMessage(group.getMqttChannel(),
-                                                                                    "0", handler -> {
-                                                                                        System.out.println(handler.result());
-                                                                                    });
+                                    if (sensor != null) {
+                                        // Obtener la entidad Placa
+                                        launchDatabaseOperation(DatabaseEntity.Placa,
+                                                new DatabaseMessage(DatabaseMessageType.SELECT, DatabaseEntity.Placa,
+                                                        DatabaseMethod.GetDevice, sensor.getIdPlaca()))
+                                                .future().onComplete(resDevice -> {
+                                                    if (resDevice.succeeded() && resDevice.result() != null) {
+                                                        Placa device = resDevice.result().getResponseBodyAs(Placa.class);
+
+                                                        if (device != null) {
+                                                            // Publicar en canal del dispositivo
+                                                            mqttClientUtil.publishMqttMessage(device.getMqttCh(),
+                                                                    gson.toJson(sensorValue), handler -> {
+                                                                        System.out.println(handler.result());
+                                                                    });
+
+                                                            // Obtener el grupo
+                                                            launchDatabaseOperation(DatabaseEntity.Grupo,
+                                                                    new DatabaseMessage(DatabaseMessageType.SELECT,
+                                                                            DatabaseEntity.Grupo,
+                                                                            DatabaseMethod.GetGroup,
+                                                                            device.getIdGrupo()))
+                                                                    .future().onComplete(resGroup -> {
+                                                                        if (resGroup.succeeded() && resGroup.result() != null) {
+                                                                            Grupo group = resGroup.result().getResponseBodyAs(Grupo.class);
+
+                                                                            if (group != null) {
+                                                                                // Publicar en canal del grupo
+                                                                                String valueToSend = (sensorValue.getValor() > TEMPERATURE_THRESHOLD) ? "1" : "0";
+                                                                                mqttClientUtil.publishMqttMessage(group.getMqttGrupoch(),
+                                                                                        valueToSend, handler -> {
+                                                                                            System.out.println(handler.result());
+                                                                                        });
+                                                                            }
                                                                         }
-                                                                    }
-                                                                });
+                                                                    });
+
+                                                            // Actualizar la Placa con fecha actual
+                                                            Placa updatedDevice = new Placa();
+                                                            updatedDevice.setIdPlaca(device.getIdPlaca());
+                                                            updatedDevice.setIdGrupo(device.getIdGrupo());
+
+                                                            launchDatabaseOperation(DatabaseEntity.Placa,
+                                                                    new DatabaseMessage(DatabaseMessageType.UPDATE, DatabaseEntity.Placa,
+                                                                            DatabaseMethod.EditDevice, updatedDevice));
+                                                        }
                                                     }
                                                 });
-
-                                        // Actualizar la entidad dispositivo con la marca de tiempo actual donde se ha modificado el último sensor
-                                        launchDatabaseOperation(DatabaseEntity.Device,
-                                                new DatabaseMessage(DatabaseMessageType.UPDATE, DatabaseEntity.Device,
-                                                        DatabaseMethod.EditDevice,
-                                                        new Device(sensor.getIdDevice(), null, null, null, null, null,
-                                                                Calendar.getInstance().getTimeInMillis())));
                                     }
                                 }
                             });
                     break;
+
                 case DeleteSensorValue:
                     launchDatabaseOperation(message);
                     break;
+
                 case GetLastSensorValueFromSensorId:
                     launchDatabaseOperation(message);
                     break;
+
                 case GetLatestSensorValuesFromSensorId:
                     launchDatabaseOperation(message);
                     break;
+
                 default:
-                    /*
-                     * In case the request cannot be handled by this controller, a 401 error code
-                     * will be issued in response to the message received from the API Rest.
-                     */
                     message.fail(401, "Method not allowed");
             }
         });
+
         startFuture.complete();
     }
 
     public void stop(Future<Void> stopFuture) throws Exception {
         super.stop(stopFuture);
     }
-
 }

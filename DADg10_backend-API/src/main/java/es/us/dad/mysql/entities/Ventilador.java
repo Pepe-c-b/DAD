@@ -89,4 +89,6 @@ public class Ventilador {
         return "Ventilador [idVentilador=" + idVentilador + ", idPlaca=" + idPlaca +
                ", idEstado=" + idEstado + ", timestamp=" + timestamp + "]";
     }
+
+	
 }

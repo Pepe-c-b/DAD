@@ -23,7 +23,7 @@ public class SensorsController extends AbstractController {
 	 * the controllers is defined.
 	 */
 	public SensorsController() {
-		super(DatabaseEntity.Sensor);
+		super(DatabaseEntity.SensorAire);
 	}
 
 	/**

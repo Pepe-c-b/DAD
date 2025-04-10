@@ -23,7 +23,7 @@ public class DevicesController extends AbstractController {
 	 * the controllers is defined.
 	 */
 	public DevicesController() {
-		super(DatabaseEntity.Device);
+		super(DatabaseEntity.Placa);
 	}
 
 	/**

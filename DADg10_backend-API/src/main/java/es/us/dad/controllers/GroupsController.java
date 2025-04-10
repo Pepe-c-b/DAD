@@ -23,7 +23,7 @@ public class GroupsController extends AbstractController {
 	 * the controllers is defined.
 	 */
 	public GroupsController() {
-		super(DatabaseEntity.Group);
+		super(DatabaseEntity.Grupo);
 	}
 
 	/**
